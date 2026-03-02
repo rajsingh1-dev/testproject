@@ -31,7 +31,7 @@ jobs:
               -e ENV=prod \
               -v /root/tir-automation/env/prod.env:/app/env/prod.env:ro \
               -v /root/tir-automation/allure-results:/app/allure-results \
-              registry.e2enetworks.net/rajsinghast03/tir-automation \
+              registry.e2enetworks.net/rajsinghast03/tir-automation@sha256:c1c899eff96e0bf4647d45e93918bab8bdd6b212fb93640dd35608c6b01f6ca6 \
               -m sfs -v --alluredir=/app/allure-results
 
             echo "=== SFS tests completed ==="
