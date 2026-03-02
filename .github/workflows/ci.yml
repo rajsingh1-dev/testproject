@@ -1,0 +1,72 @@
+name: Run SFS Tests on VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-tests:
+    name: Run SFS Pytest on VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run tests via SSH on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            echo "=== Starting SFS tests on VPS ==="
+            cd /root/tir-automation
+
+            # Clean previous results
+            rm -rf allure-results && mkdir -p allure-results
+
+            # Run SFS tests using Docker
+            docker run --rm \
+              -e ENV=prod \
+              -v /root/tir-automation/env/prod.env:/app/env/prod.env:ro \
+              -v /root/tir-automation/allure-results:/app/allure-results \
+              registry.e2enetworks.net/rajsinghast03/tir-automation \
+              -m sfs -v --alluredir=/app/allure-results
+
+            echo "=== SFS tests completed ==="
+
+      - name: Download test results from VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: /root/tir-automation/allure-results
+          target: ./test-results
+          strip_components: 2
+
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: ./test-results/allure-results
+          retention-days: 30
+
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          echo "## 🧪 SFS Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **VPS**: \`${{ secrets.VPS_HOST }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Marker**: \`sfs\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Allure Results**: Download from the **Artifacts** section below ⬇️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -d "./test-results/allure-results" ]; then
+            RESULT_COUNT=$(find ./test-results/allure-results -name "*.json" -path "*-result.json" | wc -l)
+            echo "- **Test result files found**: $RESULT_COUNT" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ No test results downloaded" >> $GITHUB_STEP_SUMMARY
+          fi
+
