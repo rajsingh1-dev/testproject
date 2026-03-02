@@ -31,20 +31,25 @@ jobs:
               -e ENV=prod \
               -v /root/tir-automation/env/prod.env:/app/env/prod.env:ro \
               -v /root/tir-automation/allure-results:/app/allure-results \
-              registry.e2enetworks.net/rajsinghast03/tir-automation@sha256:c1c899eff96e0bf4647d45e93918bab8bdd6b212fb93640dd35608c6b01f6ca6 \
+              registry.e2enetworks.net/rajsinghast03/tir-automation \
               -m sfs -v --alluredir=/app/allure-results
 
             echo "=== SFS tests completed ==="
 
       - name: Download test results from VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: /root/tir-automation/allure-results
-          target: ./test-results
-          strip_components: 2
+        if: always()
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/ci_key
+          chmod 600 ~/.ssh/ci_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+          mkdir -p ./test-results
+          scp -i ~/.ssh/ci_key -r \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/root/tir-automation/allure-results \
+            ./test-results/
+
+          rm -f ~/.ssh/ci_key
 
       - name: Upload Allure Results
         uses: actions/upload-artifact@v4
