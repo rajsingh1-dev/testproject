@@ -1,4 +1,4 @@
-name: Run SFS Tests on VPS
+name: Run Smoke Tests on Server
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   run-tests:
-    name: Run SFS Pytest on VPS
+    name: Run Smoke Tests on Server
     runs-on: ubuntu-latest
 
     steps:
@@ -17,26 +17,26 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/ci_key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Run SFS tests via Docker on VPS
+      - name: Run Smoke tests via Docker on Server
         run: |
           ssh -i ~/.ssh/ci_key -o StrictHostKeyChecking=no \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
 
-            echo "=== Starting SFS tests on VPS ==="
+            echo "=== Starting Smoke tests on Server ==="
             cd /root/tir-automation
 
             # Clean previous results
             rm -rf allure-results && mkdir -p allure-results
 
-            # Run SFS tests using Docker
+            # Run Smoke tests using Docker
             docker run --rm \
               -e ENV=prod \
               -v /root/tir-automation/env/prod.env:/app/env/prod.env:ro \
               -v /root/tir-automation/allure-results:/app/allure-results \
-              registry.e2enetworks.net/rajsinghast03/tir-automation@sha256:c1c899eff96e0bf4647d45e93918bab8bdd6b212fb93640dd35608c6b01f6ca6 \
-              -m sfs -v --alluredir=/app/allure-results
+              registry.e2enetworks.net/mycr03/tir_automation@sha256:eafb74f898b9b6ceb9f2ebd360a315a8c606de88a46d90d81adec313576db56c \
+              -m smoke -v --alluredir=/app/allure-results
 
-            echo "=== SFS tests completed ==="
+            echo "=== Smoke tests completed ==="
             ls -la /root/tir-automation/allure-results/
           ENDSSH
 
