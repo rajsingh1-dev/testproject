@@ -33,7 +33,7 @@ jobs:
               -e ENV=prod \
               -v /root/tir-automation/env/prod.env:/app/env/prod.env:ro \
               -v /root/tir-automation/allure-results:/app/allure-results \
-              registry.e2enetworks.net/mycr03/tir_automation@sha256:eafb74f898b9b6ceb9f2ebd360a315a8c606de88a46d90d81adec313576db56c \
+              registry.e2enetworks.net/mycr03/tir_automation-v2@sha256:f1d1b2bf925dbcf7c568fe6c893a1c33dc18c0fda018c1cc40b4c4b248cb1855 \
               -m smoke -v --alluredir=/app/allure-results
 
             echo "=== Smoke tests completed ==="
